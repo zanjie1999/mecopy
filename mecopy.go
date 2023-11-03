@@ -37,6 +37,7 @@ func main() {
 			fmt.Println("       mecopy               Compress clipboard image and copy to clipboard")
 			fmt.Println("       mecopy -o [filename] Save clipboard image to file")
 			fmt.Println("       mecopy [filename]    Compress image file and copy to clipboard")
+			return
 		} else if os.Args[1] == "-o" {
 			if len(data) == 0 {
 				fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
