@@ -1,7 +1,7 @@
 cd `dirname $0`
 mkdir -p build
 rm -rf build/*
-export CGO_ENABLED=0
+export CGO_ENABLED=1
 export GOARCH=amd64
 export GOOS=windows
 go build -ldflags="-w -s" -o build/mecopy.exe
@@ -18,9 +18,10 @@ export GOARCH=mips
 go build -ldflags="-w -s" -o build/mecopy-linux-mips
 export GOARCH=arm64
 go build -ldflags="-w -s" -o build/mecopy-linux-arm64
+export GOOS=freebsd
+go build -ldflags="-w -s" -o build/mecopy-freebsd
+export CGO_ENABLED=1
 export GOOS=darwin
 go build -ldflags="-w -s" -o build/mecopy-darwin-arm64
 export GOARCH=amd64
 go build -ldflags="-w -s" -o build/mecopy-darwin
-export GOOS=freebsd
-go build -ldflags="-w -s" -o build/mecopy-freebsd
