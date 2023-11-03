@@ -8,16 +8,18 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"os"
+	"strconv"
 
 	"golang.design/x/clipboard"
 )
 
-var mecopyVersion = "v1.0"
+var mecopyVersion = "v1.2"
 
 func main() {
 	err := clipboard.Init()
@@ -37,7 +39,28 @@ func main() {
 			fmt.Println("       mecopy               Compress clipboard image and copy to clipboard")
 			fmt.Println("       mecopy -o [filename] Save clipboard image to file")
 			fmt.Println("       mecopy [filename]    Compress image file and copy to clipboard")
+			fmt.Println("       mecopy -d 8.5        Automatically compress clipboard images larger than 8.5MB in the background")
 			return
+		} else if os.Args[1] == "-d" {
+			// 后台自动压缩
+			size := 8.5
+			if len(os.Args) > 2 {
+				size, err = strconv.ParseFloat(os.Args[2], 64)
+				if err != nil {
+					size = 12.0
+				}
+			}
+			fmt.Println("剪贴板图片超过", size, "MB 时会自动压缩，请保持程序运行，按 Ctrl+C 退出")
+			sizeI := int(size * 1024 * 1024)
+			for {
+				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
+				data = <-changed
+				if len(data) > sizeI {
+					toJpgCopy(data)
+				} else {
+					fmt.Println("文件未超过指定大小：", float64(len(data))/1024/1024)
+				}
+			}
 		} else if os.Args[1] == "-o" {
 			if len(data) == 0 {
 				fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
@@ -67,11 +90,16 @@ func main() {
 		}
 	}
 
+	toJpgCopy(data)
+}
+
+// 转换为jpg并放入剪贴板
+func toJpgCopy(data []byte) {
 	if len(data) == 0 {
 		fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
 		return
 	} else {
-		fmt.Println("文件大小：", len(data))
+		fmt.Println("文件大小：", float64(len(data))/1024/1024)
 	}
 
 	// 解码图片 默认png
@@ -99,6 +127,6 @@ func main() {
 	}
 
 	out := buf.Bytes()
-	fmt.Println("压缩后大小：", len(out))
+	fmt.Println("压缩后大小：", float64(len(out))/1024/1024)
 	clipboard.Write(clipboard.FmtImage, out)
 }
