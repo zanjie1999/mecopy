@@ -17,6 +17,8 @@ import (
 	"golang.design/x/clipboard"
 )
 
+var mecopyVersion = "v1.0"
+
 func main() {
 	err := clipboard.Init()
 	if err != nil {
@@ -28,7 +30,14 @@ func main() {
 	data := clipboard.Read(clipboard.FmtImage)
 
 	if len(os.Args) > 1 {
-		if os.Args[1] == "-o" {
+		if os.Args[1] == "-h" {
+			fmt.Println("mecopy", mecopyVersion)
+			fmt.Println("https://github.com/zanjie1999/mecopy")
+			fmt.Println("Usage: mecopy [options] [filename]")
+			fmt.Println("       mecopy               Compress clipboard image and copy to clipboard")
+			fmt.Println("       mecopy -o [filename] Save clipboard image to file")
+			fmt.Println("       mecopy [filename]    Compress image file and copy to clipboard")
+		} else if os.Args[1] == "-o" {
 			if len(data) == 0 {
 				fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
 				return
