@@ -56,7 +56,7 @@ func main() {
 				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
 				data = <-changed
 				if len(data) > sizeI {
-					toJpgCopy(data)
+					clipboard.Write(clipboard.FmtImage, toJpg(data))
 				} else {
 					fmt.Println("文件未超过指定大小：", float64(len(data))/1024/1024)
 				}
@@ -90,14 +90,14 @@ func main() {
 		}
 	}
 
-	toJpgCopy(data)
+	clipboard.Write(clipboard.FmtImage, toJpg(data))
 }
 
-// 转换为jpg并放入剪贴板
-func toJpgCopy(data []byte) {
+// 转换为jpg
+func toJpg(data []byte) []byte {
 	if len(data) == 0 {
 		fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
-		return
+		return nil
 	} else {
 		fmt.Println("文件大小：", float64(len(data))/1024/1024)
 	}
@@ -112,9 +112,9 @@ func toJpgCopy(data []byte) {
 		img, _, err = image.Decode(bytes.NewReader(data))
 	}
 	if err != nil {
-		fmt.Println("剪贴板图片解析失败：")
+		fmt.Println("图片解析失败：")
 		fmt.Println(err)
-		return
+		return nil
 	}
 
 	// 压缩成jpgs
@@ -123,10 +123,49 @@ func toJpgCopy(data []byte) {
 	if err != nil {
 		fmt.Println("压缩成jpg失败：")
 		fmt.Println(err)
-		return
+		return nil
 	}
 
 	out := buf.Bytes()
-	fmt.Println("压缩后大小：", float64(len(out))/1024/1024)
-	clipboard.Write(clipboard.FmtImage, out)
+	fmt.Println("压缩jpg后大小：", float64(len(out))/1024/1024)
+	return out
+}
+
+// 转换为png
+func toPng(data []byte) []byte {
+	if len(data) == 0 {
+		fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
+		return nil
+	} else {
+		fmt.Println("文件大小：", float64(len(data))/1024/1024)
+	}
+
+	// 解码图片 默认png
+	img, err := jpeg.Decode(bytes.NewReader(data))
+	if err != nil {
+		img, err = png.Decode(bytes.NewReader(data))
+	}
+	if err != nil {
+		// 不行就试试通用的，这个解码不了png
+		img, _, err = image.Decode(bytes.NewReader(data))
+	}
+	if err != nil {
+		fmt.Println("图片解析失败：")
+		fmt.Println(err)
+		return nil
+	}
+
+	// 压缩成jpg
+	buf := new(bytes.Buffer)
+	encoder := png.Encoder{CompressionLevel: png.BestCompression}
+	err = encoder.Encode(buf, img)
+	if err != nil {
+		fmt.Println("压缩成png失败：")
+		fmt.Println(err)
+		return nil
+	}
+
+	out := buf.Bytes()
+	fmt.Println("png压缩后大小：", float64(len(out))/1024/1024)
+	return out
 }
