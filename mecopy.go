@@ -39,6 +39,7 @@ func main() {
 			fmt.Println("       mecopy               Compress clipboard image and copy to clipboard")
 			fmt.Println("       mecopy -o [filename] Save clipboard image to file")
 			fmt.Println("       mecopy [filename]    Compress image file and copy to clipboard")
+			fmt.Println("       mecopy -w [filename] Write image file to clipboard")
 			fmt.Println("       mecopy -d 8.5        Automatically compress clipboard images larger than 8.5MB in the background")
 			return
 		} else if os.Args[1] == "-d" {
@@ -78,6 +79,17 @@ func main() {
 				fmt.Println("图片已保存到：", fn)
 			} else {
 				fmt.Println("保存图片失败：", err)
+			}
+			return
+		} else if os.Args[1] == "-w" && len(os.Args) > 2 {
+			// 文件写入剪贴板 mecopy -w filename
+			data, err = os.ReadFile(os.Args[2])
+			if err != nil {
+				fmt.Println("读取文件失败：", err)
+				return
+			} else {
+				fmt.Println("写入剪贴板大小：", float64(len(data))/1024/1024)
+				clipboard.Write(clipboard.FmtImage, data)
 			}
 			return
 		} else {
