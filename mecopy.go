@@ -175,7 +175,7 @@ func toPng(data []byte) []byte {
 	// err = encoder.Encode(buf, img)
 
 	// 20 quantization threshold, 0 is lossless
-	optimized := lossypng.Compress(img, lossypng.RGBAConversion, 10)
+	optimized := lossypng.Compress(img, lossypng.RGBAConversion, 5)
 	err = png.Encode(buf, optimized)
 	if err != nil {
 		fmt.Println("压缩成png失败：")
