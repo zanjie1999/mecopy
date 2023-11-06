@@ -15,6 +15,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/foobaz/lossypng/lossypng"
@@ -59,7 +60,11 @@ func main() {
 				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
 				data = <-changed
 				if len(data) > sizeI {
-					clipboard.Write(clipboard.FmtImage, toPng(data))
+					out := toPng(data)
+					clipboard.Write(clipboard.FmtImage, out)
+					if runtime.GOOS == "windows" {
+						save2File("mecopy.png", out)
+					}
 				} else {
 					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
 				}
@@ -70,18 +75,11 @@ func main() {
 				return
 			}
 			// 保存剪贴板 mecopy -o filename
-			fn := "copy.png"
+			fn := "mecopy.png"
 			if len(os.Args) > 2 {
 				fn = os.Args[2]
 			}
-			file, err := os.Create(fn)
-			if err == nil {
-				file.Write(data)
-				file.Close()
-				fmt.Println("图片已保存到：", fn)
-			} else {
-				fmt.Println("保存图片失败：", err)
-			}
+			save2File(fn, data)
 			return
 		} else if os.Args[1] == "-w" && len(os.Args) > 2 {
 			// 文件写入剪贴板 mecopy -w filename
@@ -104,7 +102,22 @@ func main() {
 		}
 	}
 
-	clipboard.Write(clipboard.FmtImage, toPng(data))
+	out := toPng(data)
+	clipboard.Write(clipboard.FmtImage, out)
+	if runtime.GOOS == "windows" {
+		save2File("mecopy.png", out)
+	}
+}
+
+func save2File(fn string, data []byte) {
+	file, err := os.Create(fn)
+	if err == nil {
+		file.Write(data)
+		file.Close()
+		fmt.Println("图片已保存到：", fn)
+	} else {
+		fmt.Println("保存图片失败：", err)
+	}
 }
 
 // 转换为jpg
