@@ -19,7 +19,7 @@ import (
 	"golang.design/x/clipboard"
 )
 
-var mecopyVersion = "v1.2"
+var mecopyVersion = "v1.3"
 
 func main() {
 	err := clipboard.Init()
@@ -52,14 +52,14 @@ func main() {
 				}
 			}
 			fmt.Println("剪贴板图片超过", size, "MB 时会自动压缩，请保持程序运行，按 Ctrl+C 退出")
-			sizeI := int(size * 1024 * 1024)
+			sizeI := int(size * 1000 * 1000)
 			for {
 				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
 				data = <-changed
 				if len(data) > sizeI {
 					clipboard.Write(clipboard.FmtImage, toJpg(data))
 				} else {
-					fmt.Println("文件未超过指定大小：", float64(len(data))/1024/1024)
+					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
 				}
 			}
 		} else if os.Args[1] == "-o" {
@@ -88,7 +88,7 @@ func main() {
 				fmt.Println("读取文件失败：", err)
 				return
 			} else {
-				fmt.Println("写入剪贴板大小：", float64(len(data))/1024/1024)
+				fmt.Println("写入剪贴板大小：", float64(len(data))/1000/1000)
 				clipboard.Write(clipboard.FmtImage, data)
 			}
 			return
@@ -129,7 +129,7 @@ func toJpg(data []byte) []byte {
 		return nil
 	}
 
-	// 压缩成jpgs
+	// 压缩成jpg
 	buf := new(bytes.Buffer)
 	err = jpeg.Encode(buf, img, &jpeg.Options{Quality: 90})
 	if err != nil {
@@ -149,7 +149,7 @@ func toPng(data []byte) []byte {
 		fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
 		return nil
 	} else {
-		fmt.Println("文件大小：", float64(len(data))/1024/1024)
+		fmt.Println("文件大小：", float64(len(data))/1000/1000)
 	}
 
 	// 解码图片 默认png
@@ -178,6 +178,6 @@ func toPng(data []byte) []byte {
 	}
 
 	out := buf.Bytes()
-	fmt.Println("png压缩后大小：", float64(len(out))/1024/1024)
+	fmt.Println("png压缩后大小：", float64(len(out))/1000/1000)
 	return out
 }
