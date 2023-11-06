@@ -11,15 +11,17 @@ import (
 	"context"
 	"fmt"
 	"image"
+	_ "image/gif"
 	"image/jpeg"
 	"image/png"
 	"os"
 	"strconv"
 
+	"github.com/foobaz/lossypng/lossypng"
 	"golang.design/x/clipboard"
 )
 
-var mecopyVersion = "v1.3"
+var mecopyVersion = "v2.0"
 
 func main() {
 	err := clipboard.Init()
@@ -57,7 +59,7 @@ func main() {
 				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
 				data = <-changed
 				if len(data) > sizeI {
-					clipboard.Write(clipboard.FmtImage, toJpg(data))
+					clipboard.Write(clipboard.FmtImage, toPng(data))
 				} else {
 					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
 				}
@@ -102,7 +104,7 @@ func main() {
 		}
 	}
 
-	clipboard.Write(clipboard.FmtImage, toJpg(data))
+	clipboard.Write(clipboard.FmtImage, toPng(data))
 }
 
 // 转换为jpg
@@ -114,15 +116,8 @@ func toJpg(data []byte) []byte {
 		fmt.Println("文件大小：", float64(len(data))/1024/1024)
 	}
 
-	// 解码图片 默认png
-	img, err := png.Decode(bytes.NewReader(data))
-	if err != nil {
-		img, err = jpeg.Decode(bytes.NewReader(data))
-	}
-	if err != nil {
-		// 不行就试试通用的，这个解码不了png
-		img, _, err = image.Decode(bytes.NewReader(data))
-	}
+	// 解码图片
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		fmt.Println("图片解析失败：")
 		fmt.Println(err)
@@ -152,15 +147,8 @@ func toPng(data []byte) []byte {
 		fmt.Println("文件大小：", float64(len(data))/1000/1000)
 	}
 
-	// 解码图片 默认png
-	img, err := jpeg.Decode(bytes.NewReader(data))
-	if err != nil {
-		img, err = png.Decode(bytes.NewReader(data))
-	}
-	if err != nil {
-		// 不行就试试通用的，这个解码不了png
-		img, _, err = image.Decode(bytes.NewReader(data))
-	}
+	// 解码图片
+	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		fmt.Println("图片解析失败：")
 		fmt.Println(err)
@@ -169,8 +157,13 @@ func toPng(data []byte) []byte {
 
 	// 压缩成jpg
 	buf := new(bytes.Buffer)
-	encoder := png.Encoder{CompressionLevel: png.BestCompression}
-	err = encoder.Encode(buf, img)
+	// 自带的直接反向压缩文件更大
+	// encoder := png.Encoder{CompressionLevel: png.BestCompression}
+	// err = encoder.Encode(buf, img)
+
+	// 20 quantization threshold, 0 is lossless
+	optimized := lossypng.Compress(img, lossypng.RGBAConversion, 10)
+	err = png.Encode(buf, optimized)
 	if err != nil {
 		fmt.Println("压缩成png失败：")
 		fmt.Println(err)
@@ -178,6 +171,6 @@ func toPng(data []byte) []byte {
 	}
 
 	out := buf.Bytes()
-	fmt.Println("png压缩后大小：", float64(len(out))/1000/1000)
+	fmt.Println("压缩后大小：", float64(len(out))/1000/1000)
 	return out
 }
