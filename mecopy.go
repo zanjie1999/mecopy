@@ -22,7 +22,7 @@ import (
 	"golang.design/x/clipboard"
 )
 
-var mecopyVersion = "v2.0"
+var mecopyVersion = "v2.1"
 
 func main() {
 	err := clipboard.Init()
@@ -47,28 +47,7 @@ func main() {
 			return
 		} else if os.Args[1] == "-d" {
 			// 后台自动压缩
-			size := 8.5
-			if len(os.Args) > 2 {
-				size, err = strconv.ParseFloat(os.Args[2], 64)
-				if err != nil {
-					size = 12.0
-				}
-			}
-			fmt.Println("剪贴板图片超过", size, "MB 时会自动压缩，请保持程序运行，按 Ctrl+C 退出")
-			sizeI := int(size * 1000 * 1000)
-			for {
-				changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
-				data = <-changed
-				if len(data) > sizeI {
-					out := toPng(data)
-					clipboard.Write(clipboard.FmtImage, out)
-					if runtime.GOOS == "windows" {
-						save2File("mecopy.png", out)
-					}
-				} else {
-					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
-				}
-			}
+			runBg()
 		} else if os.Args[1] == "-o" {
 			if len(data) == 0 {
 				fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
@@ -102,10 +81,11 @@ func main() {
 		}
 	}
 
-	out := toPng(data)
-	clipboard.Write(clipboard.FmtImage, out)
-	if runtime.GOOS == "windows" {
-		save2File("mecopy.png", out)
+	if len(data) > 0 {
+		zipImg(data)
+	} else {
+		fmt.Println("你还没有复制图片")
+		runBg()
 	}
 }
 
@@ -186,4 +166,40 @@ func toPng(data []byte) []byte {
 	out := buf.Bytes()
 	fmt.Println("压缩后大小：", float64(len(out))/1000/1000)
 	return out
+}
+
+// 压缩图片
+func zipImg(data []byte) {
+	out := toPng(data)
+	clipboard.Write(clipboard.FmtImage, out)
+	if runtime.GOOS == "windows" {
+		save2File("mecopy.png", out)
+	}
+}
+
+// 后台自动压缩
+func runBg() {
+	var data []byte
+	var err error
+	size := 8.5
+	if runtime.GOOS == "windows" {
+		size = 6.5
+	}
+	if len(os.Args) > 2 {
+		size, err = strconv.ParseFloat(os.Args[2], 64)
+		if err != nil {
+			size = 12.0
+		}
+	}
+	fmt.Println("剪贴板图片超过", size, "MB 时会自动压缩，请保持程序运行，按 Ctrl+C 退出")
+	sizeI := int(size * 1000 * 1000)
+	for {
+		changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
+		data = <-changed
+		if len(data) > sizeI {
+			zipImg(data)
+		} else {
+			fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
+		}
+	}
 }
