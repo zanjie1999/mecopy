@@ -16,7 +16,16 @@ mecopy 文件名
 mecopy -d 8.5
 # 将图片文件直接写入剪贴板
 mecopy -w 文件名
+# 使用 jpg 压缩 1-90 默认90% 越高质量越好
+mecopy -jpg 90
+# 使用 png 压缩 0-20 默认5 越低质量越好
+mecopy -png 5
+# 压缩图片文件
+mecopy -i 输入文件名 -o 输出文件名
+# 转换图片格式
+mecopy -i in.png -jpg -o out.jpg
 ```
+以上在v3.0以及之后版本均可以组合使用，请举一反三
 ### FAQ
 - 为什么byte转mb是除以两次1000而不是1024？  
     因为QQ就是这么计算的
