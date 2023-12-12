@@ -22,8 +22,8 @@ mecopy -jpg 90
 mecopy -png 5
 # 压缩图片文件
 mecopy -i 输入文件名 -o 输出文件名
-# 转换图片格式
-mecopy -i in.png -jpg -o out.jpg
+# 转换图片格式  -f 在新文件更大时使用新文件
+mecopy -i in.png -jpg -o out.jpg -f
 ```
 以上在v3.0以及之后版本均可以组合使用，请举一反三
 ### FAQ

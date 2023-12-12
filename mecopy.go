@@ -24,13 +24,14 @@ import (
 )
 
 var (
-	MecopyVersion     = "v3.0"
+	MecopyVersion     = "v3.1"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
 	PngQuality    int = 5
 	OutFilename       = "mecopy.png"
 	FlagOut           = false
+	Force             = false
 )
 
 func main() {
@@ -78,6 +79,7 @@ func main() {
 				return
 			}
 		}
+		Force, _ = findArg("-f")
 
 		// 多选一flag
 		if flg, _ := findArg("-h"); flg {
@@ -92,6 +94,7 @@ func main() {
 			fmt.Println("       mecopy -png 5            Use png to compress image, 0-20, 0 is lossless")
 			fmt.Println("       mecopy -jpg 90           Use jpg to compress image, quality 90%, 100% is very high")
 			fmt.Println("       mecopy -i [filename] -o  compress image")
+			fmt.Println("       mecopy -f                force compress (even bigger than before)")
 			return
 		} else if flg, fStr := findArg("-d"); flg {
 			num, err := strconv.ParseFloat(fStr, 64)
@@ -119,7 +122,7 @@ func main() {
 				clipboard.Write(clipboard.FmtImage, data)
 			}
 			return
-		} else {
+		} else if len(os.Args) == 2 {
 			// 从文件读取 mecopy filename
 			fmt.Println("从文件读取：", os.Args[1])
 			data, err = os.ReadFile(os.Args[1])
@@ -190,7 +193,7 @@ func toJpg(data []byte) []byte {
 
 	out := buf.Bytes()
 	fmt.Println("压缩jpg后大小：", float64(len(out))/1024/1024)
-	if len(out) >= len(data) {
+	if !Force && len(out) >= len(data) {
 		fmt.Println("压缩后比原图还大！使用原图")
 		return data
 	}
@@ -231,7 +234,7 @@ func toPng(data []byte) []byte {
 
 	out := buf.Bytes()
 	fmt.Println("压缩后大小：", float64(len(out))/1000/1000)
-	if len(out) >= len(data) {
+	if !Force && len(out) >= len(data) {
 		fmt.Println("压缩后比原图还大！使用原图")
 		return data
 	}
