@@ -41,3 +41,4 @@ mecopy -o mecopy.png -png 10 -d 6.5 -f
 - 为什么我在Windows QQ上粘贴图片，还是会过大？  
     因为Windows上的QQ会“压缩”剪贴板图片，将3m的图压成12m   
     我建议QQ点击发送图片的按钮，并手动选择程序输出的copy.png发送
+    在v4.0，造新轮子解决了这个问题

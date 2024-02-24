@@ -15,37 +15,61 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
+
+	"mecopy/meclipboard"
 
 	"github.com/foobaz/lossypng/lossypng"
 	"golang.design/x/clipboard"
 )
 
 var (
-	MecopyVersion     = "v3.1"
+	MecopyVersion     = "v4.0"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
 	PngQuality    int = 5
-	OutFilename       = "mecopy.png"
-	FlagOut           = false
-	Force             = false
+	OutFilename   string
+	FlagOut       = false
+	Force         = false
+	UseMeClip     = false
+	meClip        *meclipboard.MeClipboardService
 )
 
 func main() {
-	err := clipboard.Init()
-	if err != nil {
-		fmt.Println("初始化剪贴板失败：\n", err)
-		return
-	}
+	pwd, _ := os.Getwd()
+	var err error
 	if runtime.GOOS == "windows" {
+		OutFilename = pwd + "\\" + "mecopy.png"
 		AutoZipSize = 6.5
+		FlagOut = true
+		// 使用Windows Api弥补剪贴板库的缺陷
+		UseMeClip = true
+	} else {
+		OutFilename = pwd + "/" + "mecopy.png"
+	}
+
+	if UseMeClip {
+		meClip = meclipboard.MeClipboard()
+	} else {
+		err = clipboard.Init()
+		if err != nil {
+			fmt.Println("初始化剪贴板失败：\n", err)
+			return
+		}
 	}
 
 	// 从剪贴板读取文件
-	data := clipboard.Read(clipboard.FmtImage)
+	var data []byte
+	if UseMeClip {
+		data = meClipRead()
+	} else {
+		data = clipboard.Read(clipboard.FmtImage)
+	}
 
 	if len(os.Args) > 1 {
 		// 参数flag
@@ -66,9 +90,11 @@ func main() {
 				}
 			}
 		}
-		FlagOut, flagOStr := findArg("-o")
-		if FlagOut && flagOStr != "" {
-			OutFilename = flagOStr
+		if !FlagOut {
+			FlagOut, flagOStr := findArg("-o")
+			if FlagOut && flagOStr != "" {
+				OutFilename = flagOStr
+			}
 		}
 		if flg, fStr := findArg("-i"); flg {
 			// 从文件读取 mecopy -i filename
@@ -105,7 +131,7 @@ func main() {
 			runBg()
 		} else if FlagOut {
 			if len(data) == 0 {
-				fmt.Println("你还没有复制图片\n", string(clipboard.Read(clipboard.FmtText)))
+				fmt.Println("你还没有复制图片")
 				return
 			}
 			// 保存剪贴板 mecopy -o filename
@@ -119,7 +145,7 @@ func main() {
 				return
 			} else {
 				fmt.Println("写入剪贴板大小：", float64(len(data))/1000/1000)
-				clipboard.Write(clipboard.FmtImage, data)
+				write2Clip(data)
 			}
 			return
 		} else if len(os.Args) == 2 {
@@ -154,6 +180,7 @@ func findArg(key string) (bool, string) {
 	return false, ""
 }
 
+// 写文件
 func save2File(fn string, data []byte) {
 	file, err := os.Create(fn)
 	if err == nil {
@@ -163,6 +190,36 @@ func save2File(fn string, data []byte) {
 	} else {
 		fmt.Println("保存图片失败：", err)
 	}
+}
+
+// 写剪贴板
+func write2Clip(data []byte) {
+	if UseMeClip {
+		meClip.SetFiles([]string{OutFilename})
+	} else {
+		clipboard.Write(clipboard.FmtImage, data)
+	}
+}
+
+// 封装一下读取放方法，尝试读取复制的图片和文件
+func meClipRead() []byte {
+	data, err := meClip.Bitmap()
+	if err != nil {
+		files, err := meClip.Files()
+		if err == nil {
+			if files[0] != OutFilename {
+				// fmt.Println("您复制了文件：", files)
+				ext := strings.ToLower(filepath.Ext(files[0]))
+				if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp" || ext == ".gif" {
+					data, err = os.ReadFile(files[0])
+					if err != nil {
+						fmt.Println("读取文件失败：", err)
+					}
+				}
+			}
+		}
+	}
+	return data
 }
 
 // 转换为jpg
@@ -249,9 +306,11 @@ func zipImg(data []byte) {
 	} else {
 		out = toPng(data)
 	}
-	clipboard.Write(clipboard.FmtImage, out)
-	if runtime.GOOS == "windows" || FlagOut {
-		save2File(OutFilename, out)
+	if out != nil {
+		write2Clip(out)
+		if FlagOut {
+			save2File(OutFilename, out)
+		}
 	}
 }
 
@@ -265,13 +324,46 @@ func runBg() {
 		fmt.Println("使用png，质量", PngQuality)
 	}
 	sizeI := int(AutoZipSize * 1000 * 1000)
-	for {
-		changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
-		data = <-changed
-		if len(data) > sizeI {
-			zipImg(data)
-		} else {
-			fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
+
+	if UseMeClip {
+		// // 需要有个正在运行的线程
+		// go func() {
+		// 	time.Sleep(time.Hour)
+		// }()
+		// for {
+		// 	<-meClip.Watch()
+		// 	data = meClipRead()
+		// 	if len(data) > sizeI {
+		// 		zipImg(data)
+		// 	} else {
+		// 		fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
+		// 	}
+		// }
+
+		// windows监听不知道为什么不生效 只能用一种很简单粗暴的方式解决了
+		lastLen := 0
+		for {
+			data = meClipRead()
+			if data != nil && len(data) != lastLen {
+				lastLen = len(data)
+				if lastLen > sizeI {
+					zipImg(data)
+				} else {
+					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
+				}
+				data = nil
+			}
+			time.Sleep(time.Second * 3)
+		}
+	} else {
+		for {
+			changed := clipboard.Watch(context.Background(), clipboard.FmtImage)
+			data = <-changed
+			if len(data) > sizeI {
+				zipImg(data)
+			} else {
+				fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
+			}
 		}
 	}
 }
