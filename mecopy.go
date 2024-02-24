@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	MecopyVersion     = "v4.0"
+	MecopyVersion     = "v4.1"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
@@ -203,22 +203,27 @@ func write2Clip(data []byte) {
 
 // 封装一下读取放方法，尝试读取复制的图片和文件
 func meClipRead() []byte {
-	data, err := meClip.Bitmap()
-	if err != nil {
-		files, err := meClip.Files()
-		if err == nil {
-			if files[0] != OutFilename {
-				// fmt.Println("您复制了文件：", files)
-				ext := strings.ToLower(filepath.Ext(files[0]))
-				if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp" || ext == ".gif" {
-					data, err = os.ReadFile(files[0])
-					if err != nil {
-						fmt.Println("读取文件失败：", err)
+	var data []byte
+	if flag, _ := meClip.ContainsBitmap(); flag {
+		data, _ = meClip.Bitmap()
+	} else if flag, _ := meClip.ContainsFile(); flag {
+		if flag, _ := meClip.ContainsFile(); flag {
+			files, err := meClip.Files()
+			if err == nil {
+				if files[0] != OutFilename {
+					// fmt.Println("您复制了文件：", files)
+					ext := strings.ToLower(filepath.Ext(files[0]))
+					if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp" || ext == ".gif" {
+						data, err = os.ReadFile(files[0])
+						if err != nil {
+							fmt.Println("读取文件失败：", err)
+						}
 					}
 				}
 			}
 		}
 	}
+
 	return data
 }
 
