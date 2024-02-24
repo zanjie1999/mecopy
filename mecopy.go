@@ -209,7 +209,7 @@ func meClipRead() []byte {
 	} else if flag, _ := meClip.ContainsFile(); flag {
 		if flag, _ := meClip.ContainsFile(); flag {
 			files, err := meClip.FilesOnChange()
-			if err == nil && len(files) > 1 {
+			if err == nil && len(files) > 0 {
 				if files[0] != OutFilename {
 					// fmt.Println("您复制了文件：", files)
 					ext := strings.ToLower(filepath.Ext(files[0]))
