@@ -31,7 +31,7 @@ const (
 type MeClipboardService struct {
 	hwnd       win.HWND
 	clipUpdate chan bool
-	lastHMen   win.HGLOBAL
+	lastHMem   win.HGLOBAL
 }
 
 var (
@@ -287,10 +287,10 @@ func (c *MeClipboardService) BitmapOnChange() (bmpBytes []byte, err error) {
 		if hMem == 0 {
 			return newErr("GetClipboardData")
 		}
-		if hMem == c.lastHMen {
+		if hMem == c.lastHMem {
 			return nil
 		} else {
-			c.lastHMen = hMem
+			c.lastHMem = hMem
 		}
 
 		p := win.GlobalLock(hMem)
@@ -374,10 +374,10 @@ func (c *MeClipboardService) FilesOnChange() (filenames []string, err error) {
 		if hMem == 0 {
 			return newErr("GetClipboardData")
 		}
-		if hMem == c.lastHMen {
+		if hMem == c.lastHMem {
 			return nil
 		} else {
-			c.lastHMen = hMem
+			c.lastHMem = hMem
 		}
 		p := win.GlobalLock(hMem)
 		if p == nil {
@@ -488,6 +488,14 @@ func (c *MeClipboardService) SetFiles(paths []string) error {
 		}
 		// The system now owns the memory referred to by hMem.
 
+		return nil
+	})
+}
+
+// 写入剪贴板后更新一下，下次就不会再锁剪贴板进行读取
+func (c *MeClipboardService) UpdateLastHMemFiles() error {
+	return c.withOpenClipboard(func() error {
+		c.lastHMem = win.HGLOBAL(win.GetClipboardData(win.CF_HDROP))
 		return nil
 	})
 }

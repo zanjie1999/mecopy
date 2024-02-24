@@ -18,4 +18,5 @@ func (c *MeClipboardService) BitmapOnChange() (bmpBytes []byte, err error)   { r
 func (c *MeClipboardService) FilesOnChange() (filenames []string, err error) { return nil, nil }
 func (c *MeClipboardService) SetText(s string) error                         { return nil }
 func (c *MeClipboardService) SetFiles(paths []string) error                  { return nil }
+func (c *MeClipboardService) UpdateLastHMemFiles() error                     { return nil }
 func (c *MeClipboardService) withOpenClipboard(f func() error) error         { return nil }

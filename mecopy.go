@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	MecopyVersion     = "v4.1"
+	MecopyVersion     = "v4.2"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
@@ -353,6 +353,7 @@ func runBg() {
 				lastLen = len(data)
 				if lastLen > sizeI {
 					zipImg(data)
+					meClip.UpdateLastHMemFiles()
 				} else {
 					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
 				}
