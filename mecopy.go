@@ -205,11 +205,11 @@ func write2Clip(data []byte) {
 func meClipRead() []byte {
 	var data []byte
 	if flag, _ := meClip.ContainsBitmap(); flag {
-		data, _ = meClip.Bitmap()
+		data, _ = meClip.BitmapOnChange()
 	} else if flag, _ := meClip.ContainsFile(); flag {
 		if flag, _ := meClip.ContainsFile(); flag {
-			files, err := meClip.Files()
-			if err == nil {
+			files, err := meClip.FilesOnChange()
+			if err == nil && len(files) > 1 {
 				if files[0] != OutFilename {
 					// fmt.Println("您复制了文件：", files)
 					ext := strings.ToLower(filepath.Ext(files[0]))
