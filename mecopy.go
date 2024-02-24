@@ -353,7 +353,7 @@ func runBg() {
 				}
 				data = nil
 			}
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 2)
 		}
 	} else {
 		for {
