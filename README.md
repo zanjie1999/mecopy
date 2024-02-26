@@ -15,6 +15,8 @@ mecopy -o 文件名
 mecopy 文件名
 # 在后台自动压缩超过8.5MB的剪贴板图片（macOS QQ超过8.5MB就发不出去了）
 mecopy -d 8.5
+# Windows在后台自动压缩复制的图片和图片文件
+mecopy -file -d
 # 将图片文件直接写入剪贴板
 mecopy -w 文件名
 # 使用 jpg 压缩 1-90 默认90% 越高质量越好

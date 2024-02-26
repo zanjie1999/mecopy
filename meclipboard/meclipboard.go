@@ -76,6 +76,7 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 
 // 给win的回调 内容变化
 func clipWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
+	fmt.Println("回调", win.WM_CLIPBOARDUPDATE)
 	switch msg {
 	case win.WM_CLIPBOARDUPDATE:
 		fmt.Println("回调回调回调")
@@ -85,7 +86,7 @@ func clipWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	return win.DefWindowProc(hwnd, msg, wp, lp)
 }
 
-func init() {
+func initDisable() {
 	MustRegisterWindowClassWithWndProcPtrAndStyle("meClipboard", syscall.NewCallback(clipWndProc), 0)
 
 	hwnd := win.CreateWindowEx(
