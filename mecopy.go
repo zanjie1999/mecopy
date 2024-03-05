@@ -78,6 +78,7 @@ func main() {
 			UseJpg = true
 			if fStr != "" {
 				num, err := strconv.ParseInt(fStr, 10, 8)
+				OutFilename = OutFilename[:len(OutFilename)-3] + "jpg"
 				if err == nil {
 					JpgQuality = int(num)
 				}
