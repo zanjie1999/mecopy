@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	MecopyVersion     = "v4.2"
+	MecopyVersion     = "v4.3"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
@@ -90,9 +90,10 @@ func main() {
 				}
 			}
 		}
+		FlagOutArg, flagOStr := findArg("-o")
 		if !FlagOut {
-			FlagOut, flagOStr := findArg("-o")
-			if FlagOut && flagOStr != "" {
+			if FlagOutArg && flagOStr != "" {
+				FlagOut = true
 				OutFilename = flagOStr
 			}
 		}
@@ -129,7 +130,7 @@ func main() {
 			}
 			// 后台自动压缩
 			runBg()
-		} else if FlagOut {
+		} else if FlagOutArg && len(os.Args) < 4 {
 			if len(data) == 0 {
 				fmt.Println("你还没有复制图片")
 				return
