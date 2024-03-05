@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	MecopyVersion     = "v4.3"
+	MecopyVersion     = "v4.4"
 	AutoZipSize       = 8.5
 	UseJpg            = false
 	JpgQuality    int = 90
