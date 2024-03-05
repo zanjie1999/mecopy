@@ -35,6 +35,7 @@ var (
 	PngQuality    int = 5
 	OutFilename   string
 	FlagOut       = false
+	FlagFile      = false
 	Force         = false
 	UseMeClip     = false
 	meClip        *meclipboard.MeClipboardService
@@ -97,6 +98,9 @@ func main() {
 				OutFilename = flagOStr
 			}
 		}
+		if !FlagFile {
+			FlagFile, _ = findArg("-file")
+		}
 		if flg, fStr := findArg("-i"); flg {
 			// 从文件读取 mecopy -i filename
 			fmt.Println("从文件读取：", fStr)
@@ -117,6 +121,7 @@ func main() {
 			fmt.Println("       mecopy -o [filename]     Save clipboard image to file")
 			fmt.Println("       mecopy [filename]        Compress image file and copy to clipboard")
 			fmt.Println("       mecopy -w [filename]     Write image file to clipboard")
+			fmt.Println("       mecopy -file             Check copy image file (only Windows)")
 			fmt.Println("       mecopy -d 8.5            Automatically compress clipboard images larger than 8.5MB in the background")
 			fmt.Println("       mecopy -png 5            Use png to compress image, 0-20, 0 is lossless")
 			fmt.Println("       mecopy -jpg 90           Use jpg to compress image, quality 90%, 100% is very high")
@@ -204,26 +209,30 @@ func write2Clip(data []byte) {
 
 // 封装一下读取放方法，尝试读取复制的图片和文件
 func meClipRead() []byte {
+	// t := time.Now().UnixMicro()
 	var data []byte
 	if flag, _ := meClip.ContainsBitmap(); flag {
 		data, _ = meClip.BitmapOnChange()
-	} else if flag, _ := meClip.ContainsFile(); flag {
+	} else if FlagFile {
 		if flag, _ := meClip.ContainsFile(); flag {
-			files, err := meClip.FilesOnChange()
-			if err == nil && len(files) > 0 {
-				if files[0] != OutFilename {
-					// fmt.Println("您复制了文件：", files)
-					ext := strings.ToLower(filepath.Ext(files[0]))
-					if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp" || ext == ".gif" {
-						data, err = os.ReadFile(files[0])
-						if err != nil {
-							fmt.Println("读取文件失败：", err)
+			if flag, _ := meClip.ContainsFile(); flag {
+				files, err := meClip.FilesOnChange()
+				if err == nil && len(files) > 0 {
+					if files[0] != OutFilename {
+						// fmt.Println("您复制了文件：", files)
+						ext := strings.ToLower(filepath.Ext(files[0]))
+						if ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".webp" || ext == ".bmp" || ext == ".gif" {
+							data, err = os.ReadFile(files[0])
+							if err != nil {
+								fmt.Println("读取文件失败：", err)
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	// fmt.Println("用时：", time.Now().UnixMicro()-t)
 
 	return data
 }
@@ -255,11 +264,6 @@ func toJpg(data []byte) []byte {
 	}
 
 	out := buf.Bytes()
-	fmt.Println("压缩jpg后大小：", float64(len(out))/1024/1024)
-	if !Force && len(out) >= len(data) {
-		fmt.Println("压缩后比原图还大！使用原图")
-		return data
-	}
 	return out
 }
 
@@ -296,11 +300,6 @@ func toPng(data []byte) []byte {
 	}
 
 	out := buf.Bytes()
-	fmt.Println("压缩后大小：", float64(len(out))/1000/1000)
-	if !Force && len(out) >= len(data) {
-		fmt.Println("压缩后比原图还大！使用原图")
-		return data
-	}
 	return out
 }
 
@@ -309,10 +308,14 @@ func zipImg(data []byte) {
 	var out []byte
 	if UseJpg {
 		out = toJpg(data)
+		fmt.Println("压缩jpg后大小：", float64(len(out))/1024/1024)
 	} else {
 		out = toPng(data)
+		fmt.Println("压缩png后大小：", float64(len(out))/1024/1024)
 	}
-	if out != nil {
+	if !Force && len(out) >= len(data) {
+		fmt.Println("压缩后比原图还大！使用原图")
+	} else if out != nil {
 		write2Clip(out)
 		if FlagOut {
 			save2File(OutFilename, out)
@@ -354,7 +357,9 @@ func runBg() {
 				lastLen = len(data)
 				if lastLen > sizeI {
 					zipImg(data)
-					meClip.UpdateLastHMemFiles()
+					if FlagFile && UseMeClip {
+						meClip.UpdateLastHMemFiles()
+					}
 				} else {
 					fmt.Println("文件未超过指定大小：", float64(len(data))/1000/1000)
 				}
