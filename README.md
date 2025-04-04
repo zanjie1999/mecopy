@@ -49,3 +49,9 @@ mecopy -o mecopy.png -png 10 -d 6.5 -f
     因为Windows上的QQ会“压缩”剪贴板图片，将3m的图压成12m   
     我建议QQ点击发送图片的按钮，并手动选择程序输出的copy.png发送  
     <b>在v4.0，造新轮子解决了这个问题</b>
+
+
+
+### 协议 咩License
+使用此项目视为您已阅读并同意遵守 [此LICENSE](https://github.com/zanjie1999/LICENSE)   
+Using this project is deemed to indicate that you have read and agreed to abide by [this LICENSE](https://github.com/zanjie1999/LICENSE)   
